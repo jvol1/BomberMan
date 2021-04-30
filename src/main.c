@@ -1,7 +1,18 @@
 #include "raylib.h"
-
+#include <stdlib.h>
 #define MAX_OBSTACLES 98
 #define MAX_MONSTERS 2
+
+#ifdef WIN32
+char* pathM2 = "..\\assets\\m2.png";
+#else
+char* pathM2 = "../assets/M2.png";
+char* pathM3 = "../assets/M3.png";
+char* pathMonimonstro = "../assets/moniMonstro1.png";
+char* pathCaixa = "../assets/caixa.png";
+#endif
+
+enum DIRECTIONS {UP = 1, DOWN, RIGHT, LEFT};
 
 typedef struct {
     int life;
@@ -24,27 +35,28 @@ typedef struct {
 void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int screenWidth, int screenHeight);
 void InitPlayer(Player *playerPtr);
 void InitObstacles(Obstacle *obstacles);
+void InitMonsters(Monster *monsters, Texture2D M2texture, Texture2D M3texture);
 int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle);
+int findShortestPath(Player player, Monster monster);
 
-
-int main(void){
-    const int screenWidth = 1920;
-    const int screenHeight = 1080;
+int main(){
+    int screenWidth = 1900;
+    int screenHeight = 1080;
 
     Player player;
     Obstacle obstacles[MAX_OBSTACLES];
     Monster monsters[MAX_MONSTERS];
 
     InitWindow(screenWidth, screenHeight, "IP - THE GAME");
-
+    ToggleFullscreen();
     // As textura tem que ser inicializadas na main
     // Textures devem ser carregadas depois da inicializacao da Janela 
-    player.texture = LoadTexture("C:\\Users\\Acer\\Desktop\\BomberMan\\assets\\moniMonstro1.png");
-    Texture2D obstacleTexture = LoadTexture("C:\\Users\\Acer\\Desktop\\BomberMan\\assets\\caixa.png");
+    player.texture = LoadTexture(pathMonimonstro);
+    Texture2D obstacleTexture = LoadTexture(pathCaixa);
 
 
-    Texture2D M2texture = LoadTexture("C:\\Users\\Acer\\Desktop\\BomberMan\\assets\\m2.png");
-    Texture2D M3texture = LoadTexture("C:\\Users\\Acer\\Desktop\\BomberMan\\assets\\m3.png");
+    Texture2D M2texture = LoadTexture(pathM2);
+    Texture2D M3texture = LoadTexture(pathM3);
 
 
     InitPlayer(&player);
@@ -55,11 +67,8 @@ int main(void){
 
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
-        UpdateGame(&player, obstacles, monsters, screenWidth, screenHeight);
-
-
-
-        BeginDrawing();
+            UpdateGame(&player, obstacles, monsters, screenWidth, screenHeight);
+            BeginDrawing();
             ClearBackground(RAYWHITE);
 
             DrawRectangle(player.rec.x, player.rec.y, player.rec.width, player.rec.height, RED);
@@ -70,7 +79,6 @@ int main(void){
             for(int i = 0; i < 1; i++){
                 DrawRectangle(monsters[i].rec.x, monsters[i].rec.y, monsters[i].rec.width, monsters[i].rec.height, GREEN);
             }
-
         EndDrawing();
     }
 
@@ -119,16 +127,47 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
     if (playerPtr->rec.x + playerPtr->rec.width >= screenWidth) playerPtr->rec.x = screenWidth - playerPtr->rec.width;
     if (playerPtr->rec.y <= 0) playerPtr->rec.y = 0;
     if (playerPtr->rec.y + playerPtr->rec.height >= screenHeight) playerPtr->rec.y = screenHeight - playerPtr->rec.width;
-
-
-
-
     
+    int i;
+    for (i = 0; i < MAX_MONSTERS; i++){
+    	int direction = findShortestPath(*playerPtr, monsters[i]);
+    	if (direction == LEFT)
+    		monsters[i].rec.x -= 4;
+    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles))
+    			monsters[i].rec.x += 4;
+    	else if (direction == RIGHT)
+    		monsters[i].rec.x += 4;
+    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles))
+    			monsters[i].rec.x -= 4;
+    	else if (direction == UP)
+    		monsters[i].rec.y -= 4;
+    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles))
+    			monsters[i].rec.y += 4;
+  	else if (direction == DOWN)
+   		monsters[i].rec.y += 4;
+   		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles))
+    			monsters[i].rec.y -= 4;
+    	if (monsters[i].rec.x <= 0) monsters[0].rec.x = 0;
+    	if (monsters[i].rec.x + monsters[i].rec.width >= screenWidth) monsters[i].rec.x = screenWidth - monsters[i].rec.width;
+    	if (monsters[i].rec.y <= 0) monsters[i].rec.y = 0;
+    	if (monsters[i].rec.y + monsters[i].rec.height >= screenHeight) monsters[i].rec.y = screenHeight - monsters[i].rec.height;
+    	
+    }
+    
+    
+}
 
-    if (monsters[0].rec.x <= 0) monsters[0].rec.x = 0;
-    if (monsters[0].rec.x + monsters[0].rec.width >= screenWidth) monsters[0].rec.x = screenWidth - monsters[0].rec.width;
-    if (monsters[0].rec.y <= 0) monsters[0].rec.y = 0;
-    if (monsters[0].rec.y + monsters[0].rec.height >= screenHeight) monsters[0].rec.y = screenHeight - monsters[0].rec.height;
+int findShortestPath(Player player, Monster monster){
+	int delta_x = monster.rec.x - player.rec.x ;
+	int delta_y = monster.rec.y - player.rec.y ;
+	if (abs(delta_x) >= abs(delta_y)) 
+		if (delta_x >= 0)
+			return LEFT;
+		else return RIGHT;
+	else
+		if (delta_y >= 0) 
+			return UP;
+		else return DOWN;
 }
 
 void InitPlayer(Player *playerPtr){
@@ -156,8 +195,8 @@ void InitObstacles(Obstacle *obstacles){
 void InitMonsters(Monster *monsters, Texture2D M2texture, Texture2D M3texture){
 
     monsters[0].active = 1;
-    monsters[0].rec.x = 0;
-    monsters[0].rec.y = 0;
+    monsters[0].rec.x = 10;
+    monsters[0].rec.y = 10;
     monsters[0].rec.width = 60;
     monsters[0].rec.height = 60;
     monsters[0].texture = M2texture;
