@@ -1,15 +1,17 @@
 #include "raylib.h"
 #include <stdlib.h>
+
 #define MAX_OBSTACLES 98
 #define MAX_MONSTERS 2
+#define SIZE_REC 60
 
-#ifdef WIN32
+#ifdef WIN64
 char* pathM2 = "..\\assets\\m2.png";
 #else
-char* pathM2 = "../assets/M2.png";
-char* pathM3 = "../assets/M3.png";
-char* pathMonimonstro = "../assets/moniMonstro1.png";
-char* pathCaixa = "../assets/caixa.png";
+char pathM2[50] = "../assets/M2.png";
+char pathM3[50] = "../assets/M3.png";
+char pathMonimonstro[50] = "../assets/moniMonstro1.png";
+char pathCaixa[50] = "../assets/caixa.png";
 #endif
 
 enum DIRECTIONS {UP = 1, DOWN, RIGHT, LEFT};
@@ -34,11 +36,18 @@ typedef struct {
     Texture2D texture;
 }Monster;
 
+typedef struct {
+    bool exploded;
+    int range;
+    Texture2D texture;
+    Rectangle rec; 
+} Bomb;
+
 void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int screenWidth, int screenHeight);
 void InitPlayer(Player *playerPtr, int screenWidth, int screenHeight);
 void InitObstacles(Obstacle *obstacles);
 void InitMonsters(Monster *monsters, Texture2D M2texture, Texture2D M3texture, int screenWidth, int screenHeight);
-int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Monster *monsters, Type TYPE);
+int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Monster *monsters, Type TYPE, int id);
 int findShortestPath(Player player, Monster monster);
 
 int main(){
@@ -53,7 +62,7 @@ int main(){
     ToggleFullscreen();
     // As textura tem que ser inicializadas na main
     // Textures devem ser carregadas depois da inicializacao da Janela 
-    player.texture = LoadTexture("./../assets/moniMonstro1.png");
+    player.texture = LoadTexture(pathMonimonstro);
     Texture2D obstacleTexture = LoadTexture(pathCaixa);
 
     Texture2D M2texture = LoadTexture(pathM2);
@@ -100,25 +109,25 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
 
     if(IsKeyDown(KEY_RIGHT)){
         playerPtr->rec.x += 4;
-        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, monsters, PLAYER) == true)
+        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, monsters, PLAYER, -1) == true)
             playerPtr->rec.x -= 4;
     }
 
     if(IsKeyDown(KEY_LEFT)){
         playerPtr->rec.x -= 4;
-        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, monsters, PLAYER) == true)
+        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, monsters, PLAYER, -1) == true)
             playerPtr->rec.x += 4;
     }
 
     if(IsKeyDown(KEY_UP)){
         playerPtr->rec.y -= 4;
-        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, monsters, PLAYER) == true)
+        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, monsters, PLAYER, -1) == true)
             playerPtr->rec.y += 4;
     }
 
     if(IsKeyDown(KEY_DOWN)){
         playerPtr->rec.y += 4;
-        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, monsters, PLAYER) == true)
+        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, monsters, PLAYER, -1) == true)
             playerPtr->rec.y -= 4;
     }
 
@@ -131,27 +140,28 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
     int i;
     for (i = 0; i < MAX_MONSTERS; i++){
     	int direction = findShortestPath(*playerPtr, monsters[i]);
+        int id = monsters[i].id;
     	if (direction == LEFT){
     		monsters[i].rec.x -= 4;
-    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, monsters, MONSTER)){
+    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, monsters, MONSTER, id)){
     			monsters[i].rec.x += 4;
     		}
     	}
     	else if (direction == RIGHT){
     		monsters[i].rec.x += 4;
-    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, monsters, MONSTER)){
+    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, monsters, MONSTER, id)){
     			monsters[i].rec.x -= 4;
     		}
     	}
     	else if (direction == UP){
     		monsters[i].rec.y -= 4;
-    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, monsters, MONSTER)){
+    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, monsters, MONSTER, id)){
     			monsters[i].rec.y += 4;
     		}
     	}
   	else if (direction == DOWN){
    		monsters[i].rec.y += 4;
-   		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, monsters, MONSTER)){
+   		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, monsters, MONSTER, id)){
     			monsters[i].rec.y -= 4;
     		}
     	}
@@ -192,8 +202,8 @@ void InitObstacles(Obstacle *obstacles){
         for(j = 0; j < 14; j++){
             obstacles[k].rec.x = 128 + 128 * j;
             obstacles[k].rec.y = 128 + 128 * i;
-            obstacles[k].rec.height = 60;
-            obstacles[k].rec.width = 60;
+            obstacles[k].rec.height = SIZE_REC;
+            obstacles[k].rec.width = SIZE_REC;
             k++;
         }
     }
@@ -204,34 +214,36 @@ void InitMonsters(Monster *monsters, Texture2D M2texture, Texture2D M3texture, i
     monsters[0].active = 1;
     monsters[0].rec.x = 10;
     monsters[0].rec.y = 10;
-    monsters[0].rec.width = 60;
-    monsters[0].rec.height = 60;
+    monsters[0].rec.width = SIZE_REC;
+    monsters[0].rec.height = SIZE_REC;
     monsters[0].texture = M2texture;
+    monsters[0].id = 1;
     
 
     monsters[1].active = 1;
     monsters[1].rec.x = 1500;
     monsters[1].rec.y = 10;
-    monsters[1].rec.width = 60;
-    monsters[1].rec.height = 60;
+    monsters[1].rec.width = SIZE_REC;
+    monsters[1].rec.height = SIZE_REC;
     monsters[1].texture = M3texture;
+    monsters[1].id = 2;
 }
 
 //Criar função de colisão geral
-int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Monster *monsters, Type TYPE){
+int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Monster *monsters, Type TYPE, int id){
     int i;
 
     for(i = 0; i < MAX_OBSTACLES; i++){
         if(CheckCollisionRecs(obstacle[i].rec, rec) == true)
             return true;
-    }/*
+    }
     if (TYPE == MONSTER){
     	for (i = 0; i < MAX_MONSTERS; i++){
-		if(CheckCollisionRecs(monsters[i].rec, rec) == true && monsters[i].id)
+		if(CheckCollisionRecs(monsters[i].rec, rec) == true && monsters[i].id != id)
 	            return true;
 
 	}
-    }*/
+    }
     return false;
 }
 
