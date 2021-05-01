@@ -8,19 +8,29 @@
 #ifdef WIN64
 char* pathM2 = "..\\assets\\m2.png";
 #else
-char pathM2[50] = "../assets/M2.png";
-char pathM3[50] = "../assets/M3.png";
-char pathMonimonstro[50] = "../assets/moniMonstro1.png";
-char pathCaixa[50] = "../assets/caixa.png";
+char pathM2[50] = "./assets/M2.png";
+char pathM3[50] = "./assets/M3.png";
+char pathMonimonstro[50] = "./assets/moniMonstro1.png";
+char pathCaixa[50] = "./assets/caixa.png";
 #endif
 
 enum DIRECTIONS {UP = 1, DOWN, RIGHT, LEFT};
 typedef enum Type {PLAYER, MONSTER, OBSTACLE} Type;
 
+
+typedef struct {
+    bool exploded;
+    int range;
+    Texture2D texture;
+    Rectangle rec; 
+} Bomb;
+
 typedef struct {
     int life;
     Rectangle rec;
     Texture2D texture;
+    Bomb *bombs;
+    int num_bombs;
 }Player;
 
 typedef struct {
@@ -36,12 +46,7 @@ typedef struct {
     Texture2D texture;
 }Monster;
 
-typedef struct {
-    bool exploded;
-    int range;
-    Texture2D texture;
-    Rectangle rec; 
-} Bomb;
+
 
 void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int screenWidth, int screenHeight);
 void InitPlayer(Player *playerPtr, int screenWidth, int screenHeight);
@@ -49,6 +54,7 @@ void InitObstacles(Obstacle *obstacles);
 void InitMonsters(Monster *monsters, Texture2D M2texture, Texture2D M3texture, int screenWidth, int screenHeight);
 int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Monster *monsters, Type TYPE, int id);
 int findShortestPath(Player player, Monster monster);
+void createBomb(Player *player);
 
 int main(){
     int screenWidth = 1920;
@@ -81,6 +87,9 @@ int main(){
             ClearBackground(RAYWHITE);
 
             DrawRectangle(player.rec.x, player.rec.y, player.rec.width, player.rec.height, RED);
+            for(int i = 0; i < player.num_bombs; i++){
+                DrawRectangle(player.bombs[i].rec.x, player.bombs[i].rec.y, player.bombs[i].rec.width, player.bombs[i].rec.height, YELLOW);
+            }
 
             for(int i = 0; i < MAX_OBSTACLES; i++)
                 DrawTexture(obstacleTexture, obstacles[i].rec.x, obstacles[i].rec.y, RAYWHITE);
@@ -130,6 +139,10 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
         if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, monsters, PLAYER, -1) == true)
             playerPtr->rec.y -= 4;
     }
+    if (IsKeyDown(KEY_ENTER)){
+        createBomb(playerPtr);
+    }
+
 
 
     if (playerPtr->rec.x <= 0) playerPtr->rec.x = 0;
@@ -191,6 +204,8 @@ void InitPlayer(Player *playerPtr, int screenWidth, int screenHeight){
     // Inicializa o player 
     playerPtr->life = 3;
     playerPtr->rec = (Rectangle) {500, 10, 64, 64};
+    playerPtr->num_bombs = 0;
+    playerPtr->bombs = NULL;
 }
 
 
@@ -248,3 +263,10 @@ int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Monster *monst
 }
 
 
+void createBomb(Player *playerPtr){
+    int num = ++playerPtr->num_bombs;
+    playerPtr->bombs = realloc(playerPtr->bombs, sizeof(Bomb) * num);
+    playerPtr->bombs[num-1] = (Bomb) { .exploded = false, .range = 5, 
+        .rec = (Rectangle) {.height = 40, .width = 40, .x = playerPtr->rec.x, .y = playerPtr->rec.y} 
+        };
+}
