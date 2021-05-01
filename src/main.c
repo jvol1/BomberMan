@@ -40,7 +40,7 @@ typedef struct {
 }Monster;
 
 void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int screenWidth, int screenHeight);
-void InitPlayer(Player *playerPtr);
+void InitPlayer(Player *playerPtr, int screenWidth, int screenHeight);
 void InitObstacles(Obstacle *obstacles);
 void InitMonsters(Monster *monsters, Obstacle *obstacles, Texture2D M2texture, Texture2D M3texture);
 int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle);
@@ -59,14 +59,14 @@ int main(){
     // ToggleFullscreen();
     // As textura tem que ser inicializadas na main
     // Textures devem ser carregadas depois da inicializacao da Janela 
-
     player.texture = LoadTexture("./../assets/moniMonstro1.png");
     Texture2D obstacleTexture = LoadTexture(pathCaixa);
+
     Texture2D M2texture = LoadTexture(pathM2);
     Texture2D M3texture = LoadTexture(pathM3);
     Texture2D obstacleTextureDes = LoadTexture(pathCaixaMadeira); // obstaclesTextureDestructible 
 
-    InitPlayer(&player);
+    InitPlayer(&player, screenWidth, screenHeight);
     InitObstacles(obstacles);
     InitMonsters(monsters, obstacles, M2texture, M3texture);
 
@@ -92,6 +92,8 @@ int main(){
             }
         EndDrawing();
     }
+
+
 
     UnloadTexture(player.texture);
     UnloadTexture(obstacleTexture);
@@ -177,7 +179,7 @@ int findShortestPath(Player player, Monster monster){
 	}
 }
 
-void InitPlayer(Player *playerPtr){
+void InitPlayer(Player *playerPtr, int screenWidth, int screenHeight){
     // Inicializa o player 
     playerPtr->life = 3;
     playerPtr->rec = (Rectangle) {64, 64, 64, 64};
@@ -270,7 +272,6 @@ void InitMonsters(Monster *monsters, Obstacle *obstcles, Texture2D M2texture, Te
     monsters[0].rec.y = 64 * RandIntY;
     monsters[0].rec.width = 60;
     monsters[0].rec.height = 60;
-    monsters[0].texture = M2texture;
 
     while(CheckCollisionMultipleRecs(monsters[0].rec, obstcles) == true){
         RandIntX = GetRandomValue(2, 28);
@@ -300,7 +301,6 @@ int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Monster *monst
 */
 
 int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle){
-    // Checa a colisao de todos os objetos
     int i;
 
     for(i = 0; i < MAX_OBSTACLES; i++){
@@ -311,7 +311,6 @@ int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle){
 }
 
 int CheckCollisionMultipleRecsDes(Rectangle rec, Obstacle *obstacle){
-    // Checa a colisao de objetos destrutiveis e nao destruveis
     int i;
 
     for(i = 0; i < MAX_OBSTCLES_INDESTRUCTIBLE; i++){
