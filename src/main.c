@@ -418,9 +418,9 @@ int CheckCollisionMultipleRecsDes(Rectangle rec, Obstacle *obstacle, Type t){
     for(i = 0; i < MAX_OBSTCLES_INDESTRUCTIBLE; i++){
         if (!obstacle[i].active) continue;
         if(CheckCollisionRecs(obstacle[i].rec, rec) == true){
-            if (t == BOMB){
+            /*if (t == BOMB){
                 obstacle[i].active = false;
-            }
+            }*/
             return true;
         }
     }
@@ -440,17 +440,6 @@ bool checkCollisionMonsters(Rectangle rec, Monster *monsters, int id, Type t){
     }
     return false;
 }
-
-bool checkCollisionPlayer(Player *playerPtr, Monster* Monster, Obstacle *obstacles, int direction){
-    int i;
-    for (i = 0; i < MAX_MONSTERS; i++){
-        
-    }
-    for (i = 0; i < MAX_OBSTACLES + MAX_OBSTCLES_INDESTRUCTIBLE; i++){
-
-    }
-}
-
 
 
 
