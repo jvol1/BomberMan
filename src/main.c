@@ -110,6 +110,7 @@ int main(){
             for(int i = 0; i < MAX_MONSTERS; i++){
                 DrawRectangle(monsters[i].rec.x, monsters[i].rec.y, monsters[i].rec.width, monsters[i].rec.height, GREEN);
             }
+
         EndDrawing();
     }
 
@@ -168,10 +169,16 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
 
 void Explosion(Bomb bomb, Obstacle *Obstacles, Monster *monsters){
     int i;
+    //direita da bomba
     for (i = 0; i < bomb.range; i++){
         Rectangle explosion = {.height = RECT, .width = RECT, .x = bomb.rec.x + (i * RECT), .y = bomb.rec.y};
         
     }
+    //esquerda da bomba
+
+    //cima da bomba
+
+    //baixo da bomba
 }
 
 void controlBombs(Player *playerPtr, Obstacle *obstacles, Monster *monsters){
@@ -334,35 +341,16 @@ void InitMonsters(Monster *monsters, Obstacle *obstcles, Texture2D M2texture, Te
         while(CheckCollisionMultipleRecs(monsters[0].rec, obstcles) == true){
             RandIntX = GetRandomValue(2, 28);
             RandIntY = GetRandomValue(2, 13);
-            monsters[0].rec.x = 64 * RandIntX;
-            monsters[0].rec.y = 64 * RandIntY;
+            monsters[i].rec.x = 64 * RandIntX;
+            monsters[i].rec.y = 64 * RandIntY;
         }
     }
 }
 
-//Criar função de colisão geral
-/*
-int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Monster *monsters, Type TYPE){
-    int i;
-
-    for(i = 0; i < MAX_OBSTACLES; i++){
-        if(CheckCollisionRecs(obstacle[i].rec, rec) == true)
-            return true;
-    }/*
-    if (TYPE == MONSTER){
-    	for (i = 0; i < MAX_MONSTERS; i++){
-		if(CheckCollisionRecs(monsters[i].rec, rec) == true && monsters[i].id)
-	            return true;
-	}
-    }
-    return false;
-}
-*/
-
 void createBomb(Player *playerPtr){
     int num = ++playerPtr->num_bombs;
     playerPtr->bombs = realloc(playerPtr->bombs, sizeof(Bomb) * num);
-    playerPtr->bombs[num-1] = (Bomb) { .exploded = false, .range = 5, 
+    playerPtr->bombs[num-1] = (Bomb) { .exploded = false, .range = 4, 
         .rec = (Rectangle) {.height = RECT, .width = RECT, .x = playerPtr->rec.x, .y = playerPtr->rec.y} 
         , .tempo = 0};
 }
