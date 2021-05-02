@@ -4,7 +4,7 @@
 #define RECT (60)
 #define MAX_OBSTACLES (243)
 #define MAX_OBSTCLES_INDESTRUCTIBLE (181)
-#define MAX_MONSTERS 2
+#define MAX_MONSTERS 4
 #define SECOND (60)
 #define SPEED (4)
 
@@ -20,7 +20,6 @@ char* pathCaixaMadeira = "../assets/caixa_madeira.png";
 
 enum DIRECTIONS {UP = 1, DOWN, RIGHT, LEFT} ;
 typedef enum Type {PLAYER = 5, MONSTER, OBSTACLE, BOMB} Type;
-
 
 typedef struct {
     bool exploded;
@@ -58,7 +57,7 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
 void InitPlayer(Player *playerPtr, int screenWidth, int screenHeight);
 void InitObstacles(Obstacle *obstacles);
 void InitMonsters(Monster *monsters, Obstacle *obstacles, Texture2D M2texture, Texture2D M3texture);
-int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle);
+int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Type t);
 int CheckCollisionMultipleRecsDes(Rectangle rec, Obstacle *obstacle, Type t);
 int findShortestPath(Player player, Monster monster);
 void createBomb(Player *player);
@@ -107,7 +106,7 @@ int main(){
             for(int i = 0; i < MAX_OBSTACLES; i++){
                 if(!obstacles[i].destructible)
                     DrawTexture(obstacleTexture, obstacles[i].rec.x, obstacles[i].rec.y, RAYWHITE);
-                else
+                else if (obstacles[i].active)
                     DrawTexture(obstacleTextureDes, obstacles[i].rec.x, obstacles[i].rec.y, RAYWHITE);
             }
             
@@ -134,25 +133,25 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
 
     if(IsKeyDown(KEY_RIGHT)){
         playerPtr->rec.x += SPEED;
-        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles) == true)
+        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, PLAYER) == true)
             playerPtr->rec.x -= SPEED;
     }
 
     if(IsKeyDown(KEY_LEFT)){
         playerPtr->rec.x -= SPEED;
-        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles) == true)
+        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, PLAYER) == true)
             playerPtr->rec.x += SPEED;
     }
 
     if(IsKeyDown(KEY_UP)){
         playerPtr->rec.y -= SPEED;
-        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles) == true)
+        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, PLAYER) == true)
             playerPtr->rec.y += SPEED;
     }
 
     if(IsKeyDown(KEY_DOWN)){
         playerPtr->rec.y += SPEED;
-        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles) == true)
+        if(CheckCollisionMultipleRecs(playerPtr->rec, obstacles, PLAYER) == true)
             playerPtr->rec.y -= SPEED;
     }
     if (IsKeyDown(KEY_ENTER)){
@@ -175,7 +174,7 @@ void Explosion(Bomb bomb, Obstacle *Obstacles, Monster *monsters){
     for (i = 0; i < bomb.range && collision == 0; i++){
         Rectangle explosion = {.height = RECT, .width = RECT, .x = bomb.rec.x + (i * RECT), .y = bomb.rec.y};
         bool colMonster = checkCollisionMonsters(explosion, monsters, -1, BOMB);
-        bool colObstacle = CheckCollisionMultipleRecs(explosion, Obstacles);
+        bool colObstacle = CheckCollisionMultipleRecs(explosion, Obstacles, BOMB);
         bool colObstacleDes = CheckCollisionMultipleRecsDes(explosion, Obstacles, BOMB);
 
         if ( !( colMonster | colObstacle | colObstacleDes) ){
@@ -188,7 +187,7 @@ void Explosion(Bomb bomb, Obstacle *Obstacles, Monster *monsters){
     for (i = 0; i < bomb.range && collision == 0; i++){
         Rectangle explosion = {.height = RECT, .width = RECT, .x = bomb.rec.x - (i * RECT), .y = bomb.rec.y};
         bool colMonster = checkCollisionMonsters(explosion, monsters, -1, BOMB);
-        bool colObstacle = CheckCollisionMultipleRecs(explosion, Obstacles);
+        bool colObstacle = CheckCollisionMultipleRecs(explosion, Obstacles, BOMB);
         bool colObstacleDes = CheckCollisionMultipleRecsDes(explosion, Obstacles, BOMB);
 
         if ( !( colMonster | colObstacle | colObstacleDes) ){
@@ -201,7 +200,7 @@ void Explosion(Bomb bomb, Obstacle *Obstacles, Monster *monsters){
     for (i = 0; i < bomb.range && collision == 0; i++){
         Rectangle explosion = {.height = RECT, .width = RECT, .x = bomb.rec.x, .y = bomb.rec.y + (i * RECT)};
         bool colMonster = checkCollisionMonsters(explosion, monsters, -1, BOMB);
-        bool colObstacle = CheckCollisionMultipleRecs(explosion, Obstacles);
+        bool colObstacle = CheckCollisionMultipleRecs(explosion, Obstacles, BOMB);
         bool colObstacleDes = CheckCollisionMultipleRecsDes(explosion, Obstacles, BOMB);
 
         if ( !( colMonster | colObstacle | colObstacleDes) ){
@@ -214,7 +213,7 @@ void Explosion(Bomb bomb, Obstacle *Obstacles, Monster *monsters){
     for (i = 0; i < bomb.range && collision == 0; i++){
         Rectangle explosion = {.height = RECT, .width = RECT, .x = bomb.rec.x, .y = bomb.rec.y - (i * RECT)};
         bool colMonster = checkCollisionMonsters(explosion, monsters, -1, BOMB);
-        bool colObstacle = CheckCollisionMultipleRecs(explosion, Obstacles);
+        bool colObstacle = CheckCollisionMultipleRecs(explosion, Obstacles, BOMB);
         bool colObstacleDes = CheckCollisionMultipleRecsDes(explosion, Obstacles, BOMB);
 
         if ( !( colMonster | colObstacle | colObstacleDes) ){
@@ -244,25 +243,25 @@ void controlMonsters(Player *playerPtr, Monster* monsters, Obstacle *obstacles){
 
     	if (direction == LEFT){
     		monsters[i].rec.x -= SPEED;
-    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles) || checkCollisionMonsters(monsters[i].rec, monsters, monsters[i].id, MONSTER)){
+    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, PLAYER) || checkCollisionMonsters(monsters[i].rec, monsters, monsters[i].id, MONSTER)){
     			monsters[i].rec.x += SPEED;
     		}
     	}
     	else if (direction == RIGHT){
     		monsters[i].rec.x += SPEED;
-    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles) || checkCollisionMonsters(monsters[i].rec, monsters, monsters[i].id, MONSTER)){
+    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles,PLAYER) || checkCollisionMonsters(monsters[i].rec, monsters, monsters[i].id, MONSTER)){
     			monsters[i].rec.x -= SPEED;
     		}
     	}
     	else if (direction == UP){
     		monsters[i].rec.y -= SPEED;
-    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles) || checkCollisionMonsters(monsters[i].rec, monsters, monsters[i].id, MONSTER)){
+    		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, PLAYER) || checkCollisionMonsters(monsters[i].rec, monsters, monsters[i].id, MONSTER)){
     			monsters[i].rec.y += SPEED;
     		}
     	}
   	    else if (direction == DOWN){
    		    monsters[i].rec.y += SPEED;
-   		    if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles) || checkCollisionMonsters(monsters[i].rec, monsters, monsters[i].id, MONSTER)){
+   		    if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles, PLAYER) || checkCollisionMonsters(monsters[i].rec, monsters, monsters[i].id, MONSTER)){
     			monsters[i].rec.y -= SPEED;
     		}
     	}
@@ -304,6 +303,7 @@ void InitObstacles(Obstacle *obstacles){
             obstacles[k].rec.height = RECT;
             obstacles[k].rec.width = RECT;
             obstacles[k].destructible = 0;
+            obstacles[k].active = true;
             k++;
         }
     }
@@ -314,6 +314,7 @@ void InitObstacles(Obstacle *obstacles){
         obstacles[k].rec.height = RECT;
         obstacles[k].rec.width = RECT;
         obstacles[k].destructible = 0;
+        obstacles[k].active = true;
         k++;
     }
 
@@ -323,6 +324,7 @@ void InitObstacles(Obstacle *obstacles){
         obstacles[k].rec.height = RECT;
         obstacles[k].rec.width = RECT;
         obstacles[k].destructible = 0;
+        obstacles[k].active = true;
         k++;
     }
 
@@ -332,6 +334,7 @@ void InitObstacles(Obstacle *obstacles){
         obstacles[k].rec.height = RECT;
         obstacles[k].rec.width = RECT;
         obstacles[k].destructible = 0;
+        obstacles[k].active = true;
         k++;
     }
 
@@ -341,6 +344,7 @@ void InitObstacles(Obstacle *obstacles){
         obstacles[k].rec.height = RECT;
         obstacles[k].rec.width = RECT;
         obstacles[k].destructible = 0;
+        obstacles[k].active = true;
         k++;
     }
 
@@ -378,7 +382,7 @@ void InitMonsters(Monster *monsters, Obstacle *obstcles, Texture2D M2texture, Te
         monsters[i].rec.height = RECT;
         monsters[i].id = i+1;
 
-        while(CheckCollisionMultipleRecs(monsters[i].rec, obstcles) == true){
+        while(CheckCollisionMultipleRecs(monsters[i].rec, obstcles, MONSTER) == true){
             RandIntX = GetRandomValue(2, 28);
             RandIntY = GetRandomValue(2, 13);
             monsters[i].rec.x = 64 * RandIntX;
@@ -395,24 +399,30 @@ void createBomb(Player *playerPtr){
         , .tempo = 0};
 }
 
-int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle){
+int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle, Type t){
     int i;
     for(i = 0; i < MAX_OBSTACLES; i++){
-        if(CheckCollisionRecs(obstacle[i].rec, rec) == true)
+        if (!obstacle[i].active) continue;
+        if(CheckCollisionRecs(obstacle[i].rec, rec) == true){
+            if (t == BOMB && obstacle[i].destructible){
+                obstacle[i].active = false;
+            }
             return true;
+        }
     }
     return false;
 }
 
 int CheckCollisionMultipleRecsDes(Rectangle rec, Obstacle *obstacle, Type t){
     int i;
-
     for(i = 0; i < MAX_OBSTCLES_INDESTRUCTIBLE; i++){
-        if(CheckCollisionRecs(obstacle[i].rec, rec) == true)
-            /*if (t == BOMB){
+        if (!obstacle[i].active) continue;
+        if(CheckCollisionRecs(obstacle[i].rec, rec) == true){
+            if (t == BOMB){
                 obstacle[i].active = false;
-            }*/
+            }
             return true;
+        }
     }
     return false;
 }
