@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include "raylib.h"
 
-#define MAX_OBSTACLES 243
-#define MAX_OBSTCLES_INDESTRUCTIBLE 181
-
+#define RECT (60)
+#define MAX_OBSTACLES (243)
+#define MAX_OBSTCLES_INDESTRUCTIBLE (181)
 #define MAX_MONSTERS 2
+#define SECOND (60)
 
 #ifdef WIN64
 char* pathM2 = "..\\assets\\m2.png";
@@ -25,6 +26,7 @@ typedef struct {
     int range;
     Texture2D texture;
     Rectangle rec; 
+    int tempo;
 } Bomb;
 
 typedef struct {
@@ -59,6 +61,8 @@ int CheckCollisionMultipleRecsDes(Rectangle rec, Obstacle *obstacle);
 int findShortestPath(Player player, Monster monster);
 void createBomb(Player *player);
 void controlMonsters(Player *playerPtr, Monster* monsters, Obstacle *obstacles);
+void controlBombs(Player *playerPtr, Obstacle *obstacles, Monster *monsters);
+
 int main(){
     int screenWidth = 1920;
     int screenHeight = 1080;
@@ -151,14 +155,35 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
         createBomb(playerPtr);
     }
 
-
-
     if (playerPtr->rec.x <= 0) playerPtr->rec.x = 0;
     if (playerPtr->rec.x + playerPtr->rec.width >= screenWidth) playerPtr->rec.x = screenWidth - playerPtr->rec.width;
     if (playerPtr->rec.y <= 0) playerPtr->rec.y = 0;
     if (playerPtr->rec.y + playerPtr->rec.height >= screenHeight) playerPtr->rec.y = screenHeight - playerPtr->rec.width;
     
     controlMonsters(playerPtr, monsters, obstacles);
+
+    controlBombs(playerPtr, obstacles, monsters);
+}
+
+void Explosion(Bomb bomb, Obstacle *Obstacles, Monster *monsters){
+    int i;
+    for (i = 0; i < bomb.range; i++){
+        Rectangle explosion = {.height = RECT, .width = RECT, .x = bomb.rec.x + (i * RECT), .y = bomb.rec.y};
+        
+    }
+}
+
+void controlBombs(Player *playerPtr, Obstacle *obstacles, Monster *monsters){
+    register int i;
+    for (i = 0; i < playerPtr->num_bombs; i++){
+        if ( !(playerPtr->bombs[i]).exploded ){
+            playerPtr->bombs[i].tempo += 1;
+            if (playerPtr->bombs[i].tempo > 3*SECOND){
+                Explosion(playerPtr->bombs[i], obstacles, monsters);
+                playerPtr->bombs[i].exploded = true;
+            }
+        }
+    }
 }
 
 void controlMonsters(Player *playerPtr, Monster* monsters, Obstacle *obstacles){
@@ -199,7 +224,6 @@ int findShortestPath(Player player, Monster monster){
 		if (delta_x >= 0){
             return LEFT;
         }
-			
 		else return RIGHT;
 	}
 	else {
@@ -336,8 +360,8 @@ void createBomb(Player *playerPtr){
     int num = ++playerPtr->num_bombs;
     playerPtr->bombs = realloc(playerPtr->bombs, sizeof(Bomb) * num);
     playerPtr->bombs[num-1] = (Bomb) { .exploded = false, .range = 5, 
-        .rec = (Rectangle) {.height = 40, .width = 40, .x = playerPtr->rec.x, .y = playerPtr->rec.y} 
-        };
+        .rec = (Rectangle) {.height = RECT, .width = RECT, .x = playerPtr->rec.x, .y = playerPtr->rec.y} 
+        , .tempo = 0};
 }
 
 int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle){
@@ -358,3 +382,17 @@ int CheckCollisionMultipleRecsDes(Rectangle rec, Obstacle *obstacle){
     }
     return false;
 }
+
+bool checkCollisonMonsters(Rectangle rec, Monster *monsters, int id){
+    //id = -1 for other types
+    int i;
+    for(i = 0; i < MAX_OBSTCLES_INDESTRUCTIBLE; i++){
+        if(CheckCollisionRecs(monsters[i].rec, rec) == true && id != monsters[i].id)
+            return true;
+    }
+    return false;
+}
+
+
+
+
