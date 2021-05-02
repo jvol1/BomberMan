@@ -1,5 +1,6 @@
-#include "raylib.h"
 #include <stdlib.h>
+#include "raylib.h"
+
 #define MAX_OBSTACLES 243
 #define MAX_OBSTCLES_INDESTRUCTIBLE 181
 
@@ -57,7 +58,7 @@ int CheckCollisionMultipleRecs(Rectangle rec, Obstacle *obstacle);
 int CheckCollisionMultipleRecsDes(Rectangle rec, Obstacle *obstacle);
 int findShortestPath(Player player, Monster monster);
 void createBomb(Player *player);
-
+void controlMonsters(Player *playerPtr, Monster* monsters, Obstacle *obstacles);
 int main(){
     int screenWidth = 1920;
     int screenHeight = 1080;
@@ -157,9 +158,14 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
     if (playerPtr->rec.y <= 0) playerPtr->rec.y = 0;
     if (playerPtr->rec.y + playerPtr->rec.height >= screenHeight) playerPtr->rec.y = screenHeight - playerPtr->rec.width;
     
+    controlMonsters(playerPtr, monsters, obstacles);
+}
+
+void controlMonsters(Player *playerPtr, Monster* monsters, Obstacle *obstacles){
     int i;
     for (i = 0; i < MAX_MONSTERS; i++){
     	int direction = findShortestPath(*playerPtr, monsters[i]);
+
     	if (direction == LEFT){
     		monsters[i].rec.x -= 4;
     		if (CheckCollisionMultipleRecs(monsters[i].rec, obstacles)){
@@ -184,16 +190,16 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
     			monsters[i].rec.y -= 4;
     		}
     	}
-
     }
 }
-
 int findShortestPath(Player player, Monster monster){
 	int delta_x = monster.rec.x - player.rec.x ;
 	int delta_y = monster.rec.y - player.rec.y ;
 	if (abs(delta_x) >= abs(delta_y)) {
-		if (delta_x >= 0)
-			return LEFT;
+		if (delta_x >= 0){
+            return LEFT;
+        }
+			
 		else return RIGHT;
 	}
 	else {
