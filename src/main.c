@@ -74,12 +74,8 @@ int main(){
     Monster monsters[MAX_MONSTERS];
 
     InitWindow(screenWidth, screenHeight, "IP - THE GAME");
-    // ToggleFullscreen();
-    // As textura tem que ser inicializadas na main
-    // Textures devem ser carregadas depois da inicializacao da Janela 
     player.texture = LoadTexture("./../assets/moniMonstro1.png");
     Texture2D obstacleTexture = LoadTexture(pathCaixa);
-
     Texture2D M2texture = LoadTexture(pathM2);
     Texture2D M3texture = LoadTexture(pathM3);
     Texture2D obstacleTextureDes = LoadTexture(pathCaixaMadeira); // obstaclesTextureDestructible 
@@ -111,7 +107,7 @@ int main(){
             }
             
             for(int i = 0; i < MAX_MONSTERS && monsters[i].active == true; i++){
-                DrawRectangle(monsters[i].rec.x, monsters[i].rec.y, monsters[i].rec.width, monsters[i].rec.height, GREEN);
+                DrawTextureRec(M2texture, (Rectangle) {0, 0, M2texture.width / 3, M2texture.height / 4}, (Vector2) {monsters[i].rec.x, monsters[i].rec.y}, WHITE);
             }
 
         EndDrawing();
@@ -158,13 +154,7 @@ void UpdateGame(Player *playerPtr, Obstacle *obstacles, Monster *monsters, int s
         createBomb(playerPtr);
     }
 
-    if (playerPtr->rec.x <= 0) playerPtr->rec.x = 0;
-    if (playerPtr->rec.x + playerPtr->rec.width >= screenWidth) playerPtr->rec.x = screenWidth - playerPtr->rec.width;
-    if (playerPtr->rec.y <= 0) playerPtr->rec.y = 0;
-    if (playerPtr->rec.y + playerPtr->rec.height >= screenHeight) playerPtr->rec.y = screenHeight - playerPtr->rec.width;
-    
     controlMonsters(playerPtr, monsters, obstacles);
-
     controlBombs(playerPtr, obstacles, monsters);
 }
 
@@ -394,7 +384,7 @@ void InitMonsters(Monster *monsters, Obstacle *obstcles, Texture2D M2texture, Te
 void createBomb(Player *playerPtr){
     int num = ++playerPtr->num_bombs;
     playerPtr->bombs = realloc(playerPtr->bombs, sizeof(Bomb) * num);
-    playerPtr->bombs[num-1] = (Bomb) { .exploded = false, .range = 9, 
+    playerPtr->bombs[num-1] = (Bomb) { .exploded = false, .range = 3, 
         .rec = (Rectangle) {.height = RECT, .width = RECT, .x = playerPtr->rec.x, .y = playerPtr->rec.y} 
         , .tempo = 0};
 }
